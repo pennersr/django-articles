@@ -1,7 +1,7 @@
 import logging
 
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import ugettext_lazy as _
 from forms import ArticleAdminForm
 from models import Tag, Article, ArticleStatus, Attachment
@@ -113,7 +113,7 @@ class ArticleAdmin(admin.ModelAdmin):
 
         try:
             author = obj.author
-        except User.DoesNotExist:
+        except ObjectDoesNotExist:
             obj.author = request.user
 
         obj.save()

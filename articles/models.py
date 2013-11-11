@@ -7,7 +7,7 @@ import urllib
 
 from django.db import models
 from django.db.models import Q
-from django.contrib.auth.models import User
+from django.db.models.signals import class_prepared
 from django.contrib.markup.templatetags import markup
 from django.contrib.sites.models import Site
 from django.core.cache import cache
@@ -46,31 +46,42 @@ TAG_RE = re.compile('[^a-z0-9\-_\+\:\.]?', re.I)
 
 log = logging.getLogger('articles.models')
 
-def get_name(user):
-    """
-    Provides a way to fall back to a user's username if their full name has not
-    been entered.
-    """
+def monkey_patch_user_get_name(sender, **kwargs):
+    # TODO XXX this is a big hack. fix me.
+    # this only checks the last portion of AUTH_USER_MODEL so it is fairly
+    # plausible that this may end up adding a get_name function to the "wrong"
+    # model, however since this is non-invasive we'll come back and fix it
+    # later
+    if sender.__name__ == settings.AUTH_USER_MODEL.split(".")[-1]:
+        def get_name(user):
+            """
+            Provides a way to fall back to a user's username if their full name has not
+            been entered.
+            """
 
-    key = 'username_for_%s' % user.id
+            key = 'username_for_%s' % user.id
 
-    log.debug('Looking for "%s" in cache (%s)' % (key, user))
-    name = cache.get(key)
-    if not name:
-        log.debug('Name not found')
+            log.debug('Looking for "%s" in cache (%s)' % (key, user))
+            name = cache.get(key)
+            if not name:
+                log.debug('Name not found')
 
-        if len(user.get_full_name().strip()):
-            log.debug('Using full name')
-            name = user.get_full_name()
-        else:
-            log.debug('Using username')
-            name = user.username
+                if len(user.get_full_name().strip()):
+                    log.debug('Using full name')
+                    name = user.get_full_name()
+                else:
+                    log.debug('Using username')
+                    name = user.username
 
-        log.debug('Caching %s as "%s" for a while' % (key, name))
-        cache.set(key, name, 86400)
+                log.debug('Caching %s as "%s" for a while' % (key, name))
+                cache.set(key, name, 86400)
 
-    return name
-User.get_name = get_name
+            return name
+
+        if not hasattr(sender, 'get_name'):
+            sender.get_name = get_name
+
+class_prepared.connect(monkey_patch_user_get_name)
 
 class Tag(models.Model):
     name = models.CharField(max_length=64, unique=True)
@@ -178,7 +189,7 @@ class Article(models.Model):
     title = models.CharField(max_length=100)
     slug = models.SlugField(unique_for_year='publish_date')
     status = models.ForeignKey(ArticleStatus, default=ArticleStatus.objects.default)
-    author = models.ForeignKey(User)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL)
     sites = models.ManyToManyField(Site, blank=True)
 
     keywords = models.TextField(blank=True, help_text=_("If omitted, the keywords will be the same as the article tags."))
