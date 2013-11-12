@@ -77,7 +77,9 @@ def get_name(user):
         cache.set(key, name, 86400)
 
     return name
-User.get_name = get_name
+
+if User is not None:
+    User.get_name = get_name
 
 class Tag(models.Model):
     name = models.CharField(max_length=64, unique=True)
