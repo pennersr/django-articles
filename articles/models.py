@@ -18,6 +18,11 @@ from django.utils.text import truncate_html_words
 
 from decorators import logtime, once_per_instance
 
+try:
+    from django.utils.timezone import now
+except ImportError:
+    from datetime.datetime import now
+
 WORD_LIMIT = getattr(settings, 'ARTICLES_TEASER_LIMIT', 75)
 AUTO_TAG = getattr(settings, 'ARTICLES_AUTO_TAG', True)
 DEFAULT_DB = getattr(settings, 'ARTICLES_DEFAULT_DB', 'default')
@@ -159,11 +164,11 @@ class ArticleManager(models.Manager):
         Retrieves all active articles which have been published and have not
         yet expired.
         """
-        now = datetime.now()
+        _now = now()
         return self.get_query_set().filter(
                 Q(expiration_date__isnull=True) |
-                Q(expiration_date__gte=now),
-                publish_date__lte=now,
+                Q(expiration_date__gte=_now),
+                publish_date__lte=_now,
                 is_active=True)
 
     def live(self, user=None):
@@ -204,7 +209,7 @@ class Article(models.Model):
     followup_for = models.ManyToManyField('self', symmetrical=False, blank=True, help_text=_('Select any other articles that this article follows up on.'), related_name='followups')
     related_articles = models.ManyToManyField('self', blank=True)
 
-    publish_date = models.DateTimeField(default=datetime.now, help_text=_('The date and time this article shall appear online.'))
+    publish_date = models.DateTimeField(default=now, help_text=_('The date and time this article shall appear online.'))
     expiration_date = models.DateTimeField(blank=True, null=True, help_text=_('Leave blank if the article does not expire.'))
 
     is_active = models.BooleanField(default=True, blank=True)
@@ -227,7 +232,7 @@ class Article(models.Model):
 
         if self.id:
             # mark the article as inactive if it's expired and still active
-            if self.expiration_date and self.expiration_date <= datetime.now() and self.is_active:
+            if self.expiration_date and self.expiration_date <= now() and self.is_active:
                 self.is_active = False
                 self.save()
 
@@ -506,7 +511,7 @@ class Article(models.Model):
         get_latest_by = 'publish_date'
 
 class Attachment(models.Model):
-    upload_to = lambda inst, fn: 'attach/%s/%s/%s' % (datetime.now().year, inst.article.slug, fn)
+    upload_to = lambda inst, fn: 'attach/%s/%s/%s' % (now().year, inst.article.slug, fn)
 
     article = models.ForeignKey(Article, related_name='attachments')
     attachment = models.FileField(upload_to=upload_to)
