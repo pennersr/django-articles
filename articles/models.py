@@ -12,7 +12,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.template.defaultfilters import slugify, striptags
 from django.utils.translation import ugettext_lazy as _
-from django.utils.text import truncate_html_words
+from django.utils.text import Truncator
 
 from decorators import logtime, once_per_instance
 from templatetags import markup
@@ -468,7 +468,8 @@ class Article(models.Model):
             if len(self.description.strip()):
                 self._teaser = self.description
             else:
-                self._teaser = truncate_html_words(self.rendered_content, WORD_LIMIT)
+                truncator = Truncator(self.rendered_content)
+                self._teaser = truncator.words(WORD_LIMIT, html=True)
 
         return self._teaser
     teaser = property(_get_teaser)
