@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 
 from articles import views
 from articles.feeds import TagFeed, LatestEntries, TagFeedAtom, LatestEntriesAtom
