@@ -7,7 +7,6 @@ import urllib
 
 from django.db import models
 from django.db.models import Q, get_model
-from django.contrib.markup.templatetags import markup
 from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.conf import settings
@@ -16,6 +15,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import truncate_html_words
 
 from decorators import logtime, once_per_instance
+from templatetags import markup
 
 user_class = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 User = get_model(*user_class.split('.'))
