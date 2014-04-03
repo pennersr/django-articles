@@ -7,6 +7,7 @@ import urllib
 
 from django.db import models
 from django.db.models import Q, get_model
+from django.db.models.signals import class_prepared
 from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.conf import settings
@@ -16,9 +17,6 @@ from django.utils.text import Truncator
 
 from decorators import logtime, once_per_instance
 from templatetags import markup
-
-user_class = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
-User = get_model(*user_class.split('.'))
 
 try:
     from django.utils.timezone import now
@@ -53,33 +51,6 @@ TAG_RE = re.compile('[^a-z0-9\-_\+\:\.]?', re.I)
 
 log = logging.getLogger('articles.models')
 
-def get_name(user):
-    """
-    Provides a way to fall back to a user's username if their full name has not
-    been entered.
-    """
-
-    key = 'username_for_%s' % user.id
-
-    log.debug('Looking for "%s" in cache (%s)' % (key, user))
-    name = cache.get(key)
-    if not name:
-        log.debug('Name not found')
-
-        if len(user.get_full_name().strip()):
-            log.debug('Using full name')
-            name = user.get_full_name()
-        else:
-            log.debug('Using username')
-            name = user.username
-
-        log.debug('Caching %s as "%s" for a while' % (key, name))
-        cache.set(key, name, 86400)
-
-    return name
-
-if User is not None:
-    User.get_name = get_name
 
 class Tag(models.Model):
     name = models.CharField(max_length=64, unique=True)

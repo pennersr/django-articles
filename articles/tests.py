@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import Client
 
-from models import Article, ArticleStatus, Tag, get_name, MARKUP_HTML, MARKUP_MARKDOWN, MARKUP_REST, MARKUP_TEXTILE
+from models import Article, ArticleStatus, Tag, MARKUP_HTML, MARKUP_MARKDOWN, MARKUP_REST, MARKUP_TEXTILE
 
 class ArticleUtilMixin(object):
 
@@ -407,16 +407,3 @@ class ListenerTestCase(TestCase, ArticleUtilMixin):
 
         # make sure the tags were actually applied to our new article
         self.assertEqual(a.tags.count(), 3)
-
-class MiscTestCase(TestCase):
-    fixtures = ['users',]
-
-    def test_get_name(self):
-        u1 = User.objects.get(pk=1)
-        u2 = User.objects.get(pk=2)
-
-        self.assertEqual(get_name(u1), 'superuser')
-        self.assertEqual(get_name(u2), 'Jim Bob')
-
-        self.assertEqual(u1.get_name(), 'superuser')
-        self.assertEqual(u2.get_name(), 'Jim Bob')
