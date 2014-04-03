@@ -8,6 +8,28 @@ import math
 
 register = template.Library()
 
+
+@register.filter(name='get_name')
+def get_name(user):
+    """
+    Provides a way to fall back to a user's username if their full name has not
+    been entered.
+    """
+    key = 'username_for_%s' % user.id
+
+    name = cache.get(key)
+    if not name:
+        full_name = user.get_full_name().strip()
+        if len(full_name):
+            name = full_name
+        else:
+            name = user.username
+
+        cache.set(key, name, 86400)
+
+    return name
+
+
 class GetCategoriesNode(template.Node):
     """
     Retrieves a list of live article tags and places it into the context
