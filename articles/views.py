@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.paginator import Paginator, EmptyPage
 from django.core.urlresolvers import reverse
@@ -36,6 +36,7 @@ def display_blog_page(request, tag=None, username=None, year=None, month=None, p
 
     elif username:
         # listing articles by a particular author
+        User = get_user_model()
         user = get_object_or_404(User, username=username)
         articles = user.article_set.live(user=request.user)
         template = 'articles/by_author.html'

@@ -2,7 +2,8 @@
 
 from datetime import datetime, timedelta
 
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.test.client import Client
@@ -14,6 +15,7 @@ class ArticleUtilMixin(object):
     @property
     def superuser(self):
         if not hasattr(self, '_superuser'):
+            User = get_user_model()
             self._superuser = User.objects.filter(is_superuser=True)[0]
 
         return self._superuser
@@ -224,6 +226,7 @@ class ArticleAdminTestCase(TestCase, ArticleUtilMixin):
     def setUp(self):
         self.client = Client()
 
+        User = get_user_model()
         User.objects.create_superuser('admin', 'admin@admin.com', 'admin')
         self.client.login(username='admin', password='admin')
 
@@ -321,6 +324,7 @@ class ArticleAdminTestCase(TestCase, ArticleUtilMixin):
             self.new_article('This is a test', 'with some content')
 
         # now add some as a non-superuser
+        User = get_user_model()
         joe = User.objects.create_user('joe', 'joe@bob.com', 'bob')
         joe.is_staff = True
         joe.user_permissions = Permission.objects.filter(codename__endswith='_article')
@@ -379,6 +383,7 @@ class FormTestCase(TestCase, ArticleUtilMixin):
     def setUp(self):
         self.client = Client()
 
+        User = get_user_model()
         User.objects.create_superuser('admin', 'admin@admin.com', 'admin')
         self.client.login(username='admin', password='admin')
 
